@@ -23,6 +23,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    // CRITICAL CHECK: Ensure the bitmap font is loaded before starting other scenes that use it.
+    if (!this.cache.bitmapFont.has('pixel_font')) {
+      console.error('CRITICAL ERROR: Bitmap font "pixel_font" is not in the cache. Please check the asset paths (assets/font.png, assets/font.xml) and ensure the files are valid and accessible.');
+      // Optionally, you could add logic here to display an error screen, halt the game, or load a fallback font.
+      return;
+    }
     this.scene.start('TitleScene');
   }
 }
