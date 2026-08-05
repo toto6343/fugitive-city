@@ -64,7 +64,11 @@ export class StealthScene extends Phaser.Scene {
       for (const pair of event.pairs) {
         const bodyA = pair.bodyA;
         const bodyB = pair.bodyB;
-        if ((bodyA === this.player && bodyB === this.exitZone) || (bodyA === this.exitZone && bodyB === this.player)) {
+
+        // Check if the collision is between the player's body and the exit zone's body
+        const isPlayerExitCollision =
+          (bodyA === this.player.body && bodyB === this.exitZone) || (bodyB === this.player.body && bodyA === this.exitZone);
+        if (isPlayerExitCollision) {
           this._onEscape();
         }
       }
@@ -82,7 +86,11 @@ export class StealthScene extends Phaser.Scene {
       if (robot.state === RobotState.CHASE) discovered = true;
 
       // 단순 충돌 = 발각(붙잡힘) 처리 - Distance check is fine and works with any physics engine.
-      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, robot.sprite.body.position.x, robot.sprite.body.position.y);
+      // Using body positions for both for consistency
+      const dist = Phaser.Math.Distance.Between(
+        this.player.body.position.x, this.player.body.position.y,
+        robot.sprite.body.position.x, robot.sprite.body.position.y
+      );
       if (dist < 20) {
         this._onCaught();
       }

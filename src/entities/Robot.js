@@ -31,21 +31,19 @@ export class Robot {
     this.facingAngle = 0;
     this.lastKnownPlayerPos = null;
 
-    // Use scene.matter.add.rectangle for Matter.js physics
-    this.sprite = scene.matter.add.rectangle(x, y, 28, 28, {
-      render: {
-        fillColor: 0xef4444,
-        lineColor: 0x7f1d1d, // 테두리 색상
-        lineWidth: 2,      // 테두리 두께
-      },
-    });
+    // 1. Create a standard Phaser Rectangle Game Object
+    const robotRect = scene.add.rectangle(x, y, 28, 28, 0xef4444);
+    robotRect.setStrokeStyle(2, 0x7f1d1d);
+
+    // 2. Add it to the Matter world, which returns the Game Object with a physics body
+    this.sprite = scene.matter.add.gameObject(robotRect, {});
+
+    // Prevent the robot from rotating on collision and reduce friction
+    this.sprite.setFixedRotation();
+    this.sprite.setFriction(0.005);
  
     // 시야 표시용(디버그/연출) 삼각형 그래픽
     this.visionGfx = scene.add.graphics();
-  }
-
-  get body() {
-    return this.sprite.body;
   }
 
   canSeePlayer(playerSprite) {
@@ -55,7 +53,7 @@ export class Robot {
     if (dist > this.visionRange) return false;
 
     const angleToPlayer = Math.atan2(dy, dx);
-    let diff = Phaser.Math.Angle.Wrap(angleToPlayer - this.facingAngle);
+    const diff = Phaser.Math.Angle.Wrap(angleToPlayer - this.facingAngle);
     return Math.abs(diff) <= this.visionAngle / 2;
   }
 
@@ -122,10 +120,11 @@ export class Robot {
     }
 
     this.facingAngle = Math.atan2(dy, dx);
-    // Use this.sprite.setVelocity for Matter.js bodies
-    const vx = Math.cos(this.facingAngle) * speed;
-    const vy = Math.sin(this.facingAngle) * speed;    
-    this.sprite.setVelocity(vx / 16.66, vy / 16.66); // Matter.js velocity is different, this is an approximation
+    // Matter.js velocity is pixels per step. We adjust the base speed value.
+    const finalSpeed = speed / 60; // Approximation for 60 FPS
+    const vx = Math.cos(this.facingAngle) * finalSpeed;
+    const vy = Math.sin(this.facingAngle) * finalSpeed;
+    this.sprite.setVelocity(vx, vy);
     return false;
   }
 
@@ -151,6 +150,7 @@ export class Robot {
 
   destroy() {
     this.visionGfx.destroy();
+    // this.sprite is a GameObject, so we can destroy it directly.
     this.sprite.destroy();
   }
 }
