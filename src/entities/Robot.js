@@ -35,11 +35,11 @@ export class Robot {
     this.sprite = scene.matter.add.rectangle(x, y, 28, 28, {
       render: {
         fillColor: 0xef4444,
-        lineColor: 0x7f1d1d,
-        lineWidth: 2,
+        lineColor: 0x7f1d1d, // 테두리 색상
+        lineWidth: 2,      // 테두리 두께
       },
     });
-
+ 
     // 시야 표시용(디버그/연출) 삼각형 그래픽
     this.visionGfx = scene.add.graphics();
   }
