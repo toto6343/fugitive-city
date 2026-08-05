@@ -49,8 +49,8 @@ export class Robot {
   }
 
   canSeePlayer(playerSprite) {
-    const dx = playerSprite.x - this.sprite.x;
-    const dy = playerSprite.y - this.sprite.y;
+    const dx = playerSprite.body.position.x - this.sprite.body.position.x;
+    const dy = playerSprite.body.position.y - this.sprite.body.position.y;
     const dist = Math.hypot(dx, dy);
     if (dist > this.visionRange) return false;
 
@@ -73,7 +73,7 @@ export class Robot {
       case RobotState.CHASE:
         this._chase(dt, playerSprite);
         if (this.canSeePlayer(playerSprite)) {
-          this.lastKnownPlayerPos = { x: playerSprite.x, y: playerSprite.y };
+          this.lastKnownPlayerPos = { x: playerSprite.body.position.x, y: playerSprite.body.position.y };
           this.alertTimer = 0;
         } else {
           this.state = RobotState.ALERT;
@@ -106,14 +106,14 @@ export class Robot {
   }
 
   _chase(dt, playerSprite) {
-    this._moveToward({ x: playerSprite.x, y: playerSprite.y }, this.chaseSpeed);
+    this._moveToward({ x: playerSprite.body.position.x, y: playerSprite.body.position.y }, this.chaseSpeed);
   }
 
   /** target 방향으로 이동, 목표 도달 시 true 반환 */
   _moveToward(target, speed) {
     if (!target) return true;
-    const dx = target.x - this.sprite.x;
-    const dy = target.y - this.sprite.y;
+    const dx = target.x - this.sprite.body.position.x;
+    const dy = target.y - this.sprite.body.position.y;
     const dist = Math.hypot(dx, dy);
 
     if (dist < 6) {
@@ -124,7 +124,7 @@ export class Robot {
     this.facingAngle = Math.atan2(dy, dx);
     // Use this.sprite.setVelocity for Matter.js bodies
     const vx = Math.cos(this.facingAngle) * speed;
-    const vy = Math.sin(this.facingAngle) * speed;
+    const vy = Math.sin(this.facingAngle) * speed;    
     this.sprite.setVelocity(vx / 16.66, vy / 16.66); // Matter.js velocity is different, this is an approximation
     return false;
   }
@@ -138,15 +138,15 @@ export class Robot {
 
     const half = this.visionAngle / 2;
     const p1 = {
-      x: this.sprite.x + Math.cos(this.facingAngle - half) * this.visionRange,
-      y: this.sprite.y + Math.sin(this.facingAngle - half) * this.visionRange,
+      x: this.sprite.body.position.x + Math.cos(this.facingAngle - half) * this.visionRange,
+      y: this.sprite.body.position.y + Math.sin(this.facingAngle - half) * this.visionRange,
     };
     const p2 = {
-      x: this.sprite.x + Math.cos(this.facingAngle + half) * this.visionRange,
-      y: this.sprite.y + Math.sin(this.facingAngle + half) * this.visionRange,
+      x: this.sprite.body.position.x + Math.cos(this.facingAngle + half) * this.visionRange,
+      y: this.sprite.body.position.y + Math.sin(this.facingAngle + half) * this.visionRange,
     };
 
-    g.fillTriangle(this.sprite.x, this.sprite.y, p1.x, p1.y, p2.x, p2.y);
+    g.fillTriangle(this.sprite.body.position.x, this.sprite.body.position.y, p1.x, p1.y, p2.x, p2.y);
   }
 
   destroy() {
