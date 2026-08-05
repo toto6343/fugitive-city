@@ -102,7 +102,12 @@ export class Robot {
   }
 
   _chase(dt, playerSprite) {
-    this._moveToward({ x: playerSprite.body.position.x, y: playerSprite.body.position.y }, this.chaseSpeed);
+    // Pass the player's current position to _moveToward
+    const targetPosition = {
+      x: playerSprite.body.position.x,
+      y: playerSprite.body.position.y,
+    };
+    this._moveToward(targetPosition, this.chaseSpeed);
   }
 
   /** target 방향으로 이동, 목표 도달 시 true 반환 */
