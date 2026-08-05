@@ -35,9 +35,11 @@ export class StealthScene extends Phaser.Scene {
     // --- Player Setup ---
     // Find the 'PlayerStart' object from the Tiled map
     const playerStart = map.findObject('Objects', (obj) => obj.name === 'PlayerStart');
-    this.player = this.matter.add.sprite(playerStart.x, playerStart.y, 'player_sprite', null, {
-      label: 'player',
-    });
+
+    // Use the same robust creation method as the Robot for maximum consistency
+    const playerImage = this.add.image(playerStart.x, playerStart.y, 'player_sprite');
+    this.player = this.matter.add.gameObject(playerImage, { label: 'player' });
+
     this.player.setFixedRotation();
     this.player.setPipeline('Light2D');
 
