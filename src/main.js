@@ -11,10 +11,10 @@ const config = {
   height: 540,
   backgroundColor: '#111318',
   physics: {
-    default: 'arcade',
-    arcade: {
+    default: 'matter',
+    matter: {
       gravity: { y: 0 },
-      debug: false,
+      debug: true, // Setting debug to true is very helpful during development!
     },
   },
   scale: {
