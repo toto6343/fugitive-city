@@ -41,6 +41,14 @@ export class StealthScene extends Phaser.Scene {
     this.player.setFixedRotation();
     this.player.setPipeline('Light2D');
 
+    // --- DEBUGGING PLAYER OBJECT ---
+    console.log("=== PLAYER DEBUG ===");
+    console.log(this.player);
+    console.log("constructor:", this.player?.constructor?.name);
+    console.log("setVelocity type:", typeof this.player?.setVelocity);
+    console.log("body:", this.player?.body);
+    console.log("====================");
+
     // Player's flashlight
     this.playerLight = this.lights.addLight(this.player.x, this.player.y, 200, 0xffffff, 1.2);
 
