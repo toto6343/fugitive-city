@@ -8,7 +8,18 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // TODO: 실제 에셋(로봇 스프라이트, 플레이어 스프라이트, 사운드) 추가 시 여기에 preload
+    // For demonstration, we'll use placeholder assets.
+    // You should replace these with your actual asset paths.
+    this.load.image('player_sprite', 'assets/player.png');
+    this.load.image('robot_sprite', 'assets/robot.png');
+    this.load.image('title_bg', 'assets/title_bg.png');
+
+    // Tilemap assets
+    this.load.image('city_tileset', 'assets/city_tileset.png');
+    this.load.tilemapTiledJSON('city_map', 'assets/city_map.json');
+
+    // Bitmap Font
+    this.load.bitmapFont('pixel_font', 'assets/font.png', 'assets/font.xml');
   }
 
   create() {

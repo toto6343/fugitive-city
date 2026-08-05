@@ -31,16 +31,14 @@ export class Robot {
     this.facingAngle = 0;
     this.lastKnownPlayerPos = null;
 
-    // 1. Create a standard Phaser Rectangle Game Object
-    const robotRect = scene.add.rectangle(x, y, 28, 28, 0xef4444);
-    robotRect.setStrokeStyle(2, 0x7f1d1d);
-
-    // 2. Add it to the Matter world, which returns the Game Object with a physics body
-    this.sprite = scene.matter.add.gameObject(robotRect, {});
+    this.sprite = scene.matter.add.sprite(x, y, 'robot_sprite', null, {
+      label: 'robot',
+    });
 
     // Prevent the robot from rotating on collision and reduce friction
     this.sprite.setFixedRotation();
     this.sprite.setFriction(0.005);
+    this.sprite.setPipeline('Light2D');
  
     // 시야 표시용(디버그/연출) 삼각형 그래픽
     this.visionGfx = scene.add.graphics();

@@ -12,37 +12,27 @@ export class EndingScene extends Phaser.Scene {
 
     this.add.rectangle(0, 0, width, height, 0x111318).setOrigin(0);
     this.add.rectangle(0, 0, width, 60, 0x991b1b).setOrigin(0);
-    this.add
-      .text(20, 18, '속보', { fontFamily: 'sans-serif', fontSize: '24px', color: '#fff' })
-      .setOrigin(0, 0);
 
     this.add
-      .text(width / 2, height / 2 - 40, '정체불명 괴한, 도심 시설 파괴 후 도주', {
-        fontFamily: 'sans-serif',
-        fontSize: '22px',
-        color: '#f5f5f5',
-        align: 'center',
-        wordWrap: { width: width - 100 },
-      })
-      .setOrigin(0.5);
+      .bitmapText(20, 18, 'pixel_font', 'BREAKING NEWS', 24)
+      .setOrigin(0, 0.5);
 
     this.add
-      .text(width / 2, height / 2 + 20, '정부 측은 사건과 관련해 "로봇 관련 보고는 없었다"고 밝혔다.', {
-        fontFamily: 'sans-serif',
-        fontSize: '14px',
-        color: '#999',
-        align: 'center',
-        wordWrap: { width: width - 140 },
-      })
-      .setOrigin(0.5);
+      .bitmapText(width / 2, height / 2 - 40, 'pixel_font', 'UNIDENTIFIED FUGITIVE DESTROYS CITY FACILITIES', 24)
+      .setOrigin(0.5)
+      .setCenterAlign();
 
     this.add
-      .text(width / 2, height - 40, '[ SPACE로 타이틀로 ]', {
-        fontFamily: 'sans-serif',
-        fontSize: '14px',
-        color: '#4ade80',
-      })
+      .bitmapText(width / 2, height / 2 + 40, 'pixel_font', 'An official stated: "There were no reports of malfunctioning androids."', 16)
+      .setOrigin(0.5)
+      .setCenterAlign()
+      .setTint(0xaaaaaa)
+      .setMaxWidth(width - 140);
+
+    const restartText = this.add
+      .bitmapText(width / 2, height - 40, 'pixel_font', '[ PRESS SPACE TO RETURN TO TITLE ]', 16)
       .setOrigin(0.5);
+    restartText.setTint(0x4ade80);
 
     this.input.keyboard.once('keydown-SPACE', () => this.scene.start('TitleScene'));
   }

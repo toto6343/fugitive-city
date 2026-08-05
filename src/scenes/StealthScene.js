@@ -11,48 +11,62 @@ export class StealthScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    this.add
-      .text(width / 2, 20, '은신 구간 (프로토타입) - 방향키/WASD로 이동, 빨간 시야에 들어가면 발각',{
-        fontFamily: 'sans-serif',
-        fontSize: '14px',
-        color: '#aaa',
-      })
-      .setOrigin(0.5, 0);
+    // --- Tilemap Setup ---
+    const map = this.make.tilemap({ key: 'city_map' });
+    const tileset = map.addTilesetImage('city_tileset', 'city_tileset');
+    const groundLayer = map.createLayer('Ground', tileset, 0, 0);
+    const wallsLayer = map.createLayer('Walls', tileset, 0, 0);
 
-    // 플레이어 (placeholder: 초록 사각형)
-    // 1. Create a standard Phaser Rectangle Game Object
-    const playerRect = this.add.rectangle(80, height - 80, 24, 24, 0x4ade80);
-    // 2. Add it to the Matter world, which returns the Game Object with a physics body
-    this.player = this.matter.add.gameObject(playerRect, {});
-    // Prevent the player from rotating on collision
+    // --- Tilemap Collision ---
+    // Set collision on the 'Walls' layer. Any tile with a 'collides' property set to true in Tiled will collide.
+    wallsLayer.setCollisionByProperty({ collides: true });
+    this.matter.world.convertTilemapLayer(wallsLayer);
+
+    // --- Lighting ---
+    this.lights.enable();
+    this.lights.setAmbientColor(0x333333);
+    groundLayer.setPipeline('Light2D');
+    wallsLayer.setPipeline('Light2D');
+
+    // Neon lights for atmosphere
+    this.lights.addLight(100, 100, 128, 0xff00ff, 1.5); // Pink
+    this.lights.addLight(700, 450, 128, 0x00ffff, 1.5); // Cyan
+
+    // --- Player Setup ---
+    // Find the 'PlayerStart' object from the Tiled map
+    const playerStart = map.findObject('Objects', (obj) => obj.name === 'PlayerStart');
+    this.player = this.matter.add.sprite(playerStart.x, playerStart.y, 'player_sprite', null, {
+      label: 'player',
+    });
     this.player.setFixedRotation();
+    this.player.setPipeline('Light2D');
 
-    // 탈출구 (placeholder: 노란 사각형, 우상단)
-    // For Matter.js, create a sensor for the exit zone.
-    this.exitZone = this.matter.add.rectangle(width - 60, 60, 50, 50, {
+    // Player's flashlight
+    this.playerLight = this.lights.addLight(this.player.x, this.player.y, 200, 0xffffff, 1.2);
+
+    // --- Exit Zone ---
+    const exitObject = map.findObject('Objects', (obj) => obj.name === 'Exit');
+    this.exitZone = this.matter.add.rectangle(exitObject.x + exitObject.width / 2, exitObject.y + exitObject.height / 2, exitObject.width, exitObject.height, {
       isStatic: true,
       isSensor: true, // Sensors trigger collision events but don't cause a physical response.
-      render: {
-        fillColor: 0xfacc15,
-      },
+      label: 'exitZone',
     });
-    this.add
-      .text(width - 60, 60, 'EXIT', { fontFamily: 'sans-serif', fontSize: '12px', color: '#fde68a' })
-      .setOrigin(0.5);
 
-    // 로봇 배치 (순찰 경로 예시 2대)
-    this.robots = [
-      new Robot(this, 400, 150, [
-        { x: 400, y: 150 },
-        { x: 650, y: 150 },
-        { x: 650, y: 350 },
-        { x: 400, y: 350 },
-      ]),
-      new Robot(this, 250, 400, [
-        { x: 250, y: 400 },
-        { x: 550, y: 400 },
-      ]),
-    ];
+    // --- Robot Setup ---
+    this.robots = [];
+    const robotObjects = map.getObjectLayer('Robots');
+    robotObjects.objects.forEach((robotObj) => {
+      // Tiled patrol points are custom properties like 'patrol_1', 'patrol_2', etc.
+      const patrolPoints = [];
+      let i = 1;
+      while (robotObj.properties && robotObj.properties.find((p) => p.name === `patrol_${i}`)) {
+        const pointValue = robotObj.properties.find((p) => p.name === `patrol_${i}`).value;
+        const [px, py] = pointValue.split(',').map(Number);
+        patrolPoints.push({ x: px, y: py });
+      }
+      const robot = new Robot(this, robotObj.x, robotObj.y, patrolPoints);
+      this.robots.push(robot);
+    });
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys('W,A,S,D');
@@ -60,13 +74,16 @@ export class StealthScene extends Phaser.Scene {
     this.caught = false;
 
     // Matter.js collision detection is handled differently.
+    // Also launch the UI Scene
+    this.scene.launch('UIScene');
+
     this.matter.world.on('collisionstart', (event) => {
       for (const pair of event.pairs) {
         const bodyA = pair.bodyA;
         const bodyB = pair.bodyB;
 
         // Check if the collision is between the player's body and the exit zone's body
-        const isPlayerExitCollision =
+        const isPlayerExitCollision = 
           (bodyA === this.player.body && bodyB === this.exitZone) || (bodyB === this.player.body && bodyA === this.exitZone);
         if (isPlayerExitCollision) {
           this._onEscape();
@@ -80,13 +97,18 @@ export class StealthScene extends Phaser.Scene {
 
     this._handlePlayerMovement(delta);
 
+    // Update flashlight position
+    this.playerLight.setPosition(this.player.x, this.player.y);
+
     let discovered = false;
+    let wasDiscoveredLastFrame = this.discoveredLastFrame || false;
+
     for (const robot of this.robots) {
       robot.update(time, delta, this.player);
       if (robot.state === RobotState.CHASE) discovered = true;
 
-      // 단순 충돌 = 발각(붙잡힘) 처리 - Distance check is fine and works with any physics engine.
-      // Using body positions for both for consistency
+      // Using body positions for both for consistency.
+      // This is a simplified "touch" collision for game over.
       const dist = Phaser.Math.Distance.Between(
         this.player.body.position.x, this.player.body.position.y,
         robot.sprite.body.position.x, robot.sprite.body.position.y
@@ -96,7 +118,13 @@ export class StealthScene extends Phaser.Scene {
       }
     }
 
-    this._updateStatusText(discovered);
+    // Emit events to UI scene only when the state changes
+    if (discovered && !wasDiscoveredLastFrame) {
+      this.events.emit('player-discovered');
+    } else if (!discovered && wasDiscoveredLastFrame) {
+      this.events.emit('player-safe');
+    }
+    this.discoveredLastFrame = discovered;
   }
 
   _handlePlayerMovement(delta) {
@@ -116,27 +144,21 @@ export class StealthScene extends Phaser.Scene {
     this.player.setVelocity(finalVx, finalVy);
   }
 
-  _updateStatusText(discovered) {
-    if (!this.statusText) {
-      this.statusText = this.add.text(10, 10, '', { fontFamily: 'sans-serif', fontSize: '14px' });
-    }
-    this.statusText.setText(discovered ? '⚠ 발각됨!' : '안전');
-    this.statusText.setColor(discovered ? '#f87171' : '#4ade80');
-  }
-
   _onCaught() {
     if (this.caught) return;
     this.caught = true;
     this.player.setVelocity(0, 0); // This will now work correctly
+    this.scene.stop('UIScene');
 
     const { width, height } = this.scale;
+    // Semi-transparent overlay
+    this.add.rectangle(0, 0, width, height, 0x000000, 0.7).setOrigin(0);
+
     this.add
-      .text(width / 2, height / 2, 'GAME OVER\n스페이스로 재시작', {
-        fontFamily: 'sans-serif',
-        fontSize: '28px',
-        color: '#f87171',
-        align: 'center',
-      })
+      .bitmapText(width / 2, height / 2 - 30, 'pixel_font', 'GAME OVER', 64)
+      .setOrigin(0.5);
+    this.add
+      .bitmapText(width / 2, height / 2 + 30, 'pixel_font', '[ PRESS SPACE TO RESTART ]', 24)
       .setOrigin(0.5);
 
     this.input.keyboard.once('keydown-SPACE', () => this.scene.restart());
@@ -145,6 +167,8 @@ export class StealthScene extends Phaser.Scene {
   _onEscape() {
     if (this.caught) return;
     this.caught = true; // 씬 전환 전 중복 트리거 방지
+    this.events.emit('escape-success');
+    this.scene.stop('UIScene');
     this.scene.start('EndingScene');
   }
 }

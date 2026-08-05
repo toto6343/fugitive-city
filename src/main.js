@@ -3,6 +3,7 @@ import { BootScene } from './scenes/BootScene.js';
 import { TitleScene } from './scenes/TitleScene.js';
 import { StealthScene } from './scenes/StealthScene.js';
 import { EndingScene } from './scenes/EndingScene.js';
+import { UIScene } from './scenes/UIScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -21,7 +22,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, TitleScene, StealthScene, EndingScene],
+  scene: [BootScene, TitleScene, StealthScene, UIScene, EndingScene],
 };
 
 new Phaser.Game(config);
