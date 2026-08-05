@@ -31,7 +31,12 @@ export class Robot {
     this.facingAngle = 0;
     this.lastKnownPlayerPos = null;
 
-    this.sprite = scene.physics.add.rectangle(x, y, 28, 28, 0xef4444);
+    // Use scene.matter.add.rectangle for Matter.js physics
+    this.sprite = scene.matter.add.rectangle(x, y, 28, 28, {
+      render: {
+        fillColor: 0xef4444,
+      },
+    });
     this.sprite.setStrokeStyle(2, 0x7f1d1d);
 
     // 시야 표시용(디버그/연출) 삼각형 그래픽
@@ -116,7 +121,10 @@ export class Robot {
     }
 
     this.facingAngle = Math.atan2(dy, dx);
-    this.body.setVelocity(Math.cos(this.facingAngle) * speed, Math.sin(this.facingAngle) * speed);
+    // Use this.sprite.setVelocity for Matter.js bodies
+    const vx = Math.cos(this.facingAngle) * speed;
+    const vy = Math.sin(this.facingAngle) * speed;
+    this.sprite.setVelocity(vx / 16.66, vy / 16.66); // Matter.js velocity is different, this is an approximation
     return false;
   }
 

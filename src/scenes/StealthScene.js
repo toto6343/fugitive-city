@@ -20,12 +20,21 @@ export class StealthScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
 
     // 플레이어 (placeholder: 초록 사각형)
-    this.player = this.physics.add.rectangle(80, height - 80, 24, 24, 0x4ade80);
-    this.player.setCollideWorldBounds(true);
+    // Use this.matter.add.rectangle for Matter.js
+    this.player = this.matter.add.rectangle(80, height - 80, 24, 24, {
+      render: { fillColor: 0x4ade80 },
+    });
+    // Matter.js bodies collide with world bounds by default.
 
     // 탈출구 (placeholder: 노란 사각형, 우상단)
-    this.exitZone = this.add.rectangle(width - 60, 60, 50, 50, 0xfacc15, 0.3);
-    this.physics.add.existing(this.exitZone, true);
+    // For Matter.js, create a sensor for the exit zone.
+    this.exitZone = this.matter.add.rectangle(width - 60, 60, 50, 50, {
+      isStatic: true,
+      isSensor: true, // Sensors trigger collision events but don't cause a physical response.
+      render: {
+        fillColor: 0xfacc15,
+      },
+    });
     this.add
       .text(width - 60, 60, 'EXIT', { fontFamily: 'sans-serif', fontSize: '12px', color: '#fde68a' })
       .setOrigin(0.5);
@@ -49,7 +58,16 @@ export class StealthScene extends Phaser.Scene {
 
     this.caught = false;
 
-    this.physics.add.overlap(this.player, this.exitZone, () => this._onEscape());
+    // Matter.js collision detection is handled differently.
+    this.matter.world.on('collisionstart', (event) => {
+      for (const pair of event.pairs) {
+        const bodyA = pair.bodyA;
+        const bodyB = pair.bodyB;
+        if ((bodyA === this.player && bodyB === this.exitZone) || (bodyA === this.exitZone && bodyB === this.player)) {
+          this._onEscape();
+        }
+      }
+    });
   }
 
   update(time, delta) {
@@ -62,7 +80,7 @@ export class StealthScene extends Phaser.Scene {
       robot.update(time, delta, this.player);
       if (robot.state === RobotState.CHASE) discovered = true;
 
-      // 단순 충돌 = 발각(붙잡힘) 처리
+      // 단순 충돌 = 발각(붙잡힘) 처리 - Distance check is fine and works with any physics engine.
       const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, robot.sprite.x, robot.sprite.y);
       if (dist < 20) {
         this._onCaught();
@@ -83,7 +101,8 @@ export class StealthScene extends Phaser.Scene {
     if (this.cursors.down.isDown || this.wasd.S.isDown) vy += 1;
 
     const len = Math.hypot(vx, vy) || 1;
-    this.player.body.setVelocity((vx / len) * speed, (vy / len) * speed);
+    // Use this.player.setVelocity for Matter.js bodies
+    this.player.setVelocity(((vx / len) * speed) / 16.66, ((vy / len) * speed) / 16.66);
   }
 
   _updateStatusText(discovered) {
@@ -97,7 +116,7 @@ export class StealthScene extends Phaser.Scene {
   _onCaught() {
     if (this.caught) return;
     this.caught = true;
-    this.player.body.setVelocity(0, 0);
+    this.player.setVelocity(0, 0);
 
     const { width, height } = this.scale;
     this.add
