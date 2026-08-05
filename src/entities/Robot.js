@@ -116,7 +116,7 @@ export class Robot {
     const dist = Math.hypot(dx, dy);
 
     if (dist < 6) {
-      this.body.setVelocity(0, 0);
+      this.sprite.setVelocity(0, 0);
       return true;
     }
 
